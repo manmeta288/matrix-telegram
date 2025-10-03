@@ -52,15 +52,15 @@ EOF
 fi
 
 if [[ ! -f /data/config.yaml ]]; then
-    /usr/bin/mautrix-telegram -c /data/config.yaml -e
+    python3 -m mautrix_telegram -c /data/config.yaml -e
     exit
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
-    /usr/bin/mautrix-telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
+    python3 -m mautrix_telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
     exit
 fi
 
 cd /data
 fixperms
-exec su-exec $UID:$GID /usr/bin/mautrix-telegram
+exec su-exec $UID:$GID python3 -m mautrix_telegram
