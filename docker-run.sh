@@ -16,6 +16,15 @@ if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
     # First generate default config 
     python3 -m mautrix_telegram -g -c /data/config.yaml -e || exit $?
     
+    # Debug: Check logging section structure before patch
+    cat > /tmp/debug_config.py << 'EODEBUG'
+import yaml
+with open('/data/config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+print("Logging section:", config.get('logging', 'NOT FOUND'))
+EODEBUG
+    python3 /tmp/debug_config.py
+    
     # Then modify the generated config with our settings AND fix logging
     cat > /tmp/config_patch.py << 'EOPATCH'
 import yaml
@@ -44,14 +53,24 @@ config['bridge']['displayname_template'] = '{displayname} (TG)'
 config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
 config['bridge']['permissions']['*'] = 'relay'
 
-# FIX THE LOGGING CONFIG - Add version field
-config['logging']['version'] = 1
+# FIX THE LOGGING CONFIG - Ensure version is added
+if 'logging' in config:
+    config['logging']['version'] = 1
+    print("Added version to existing logging config")
+else:
+    print("WARNING: No logging section found in config!")
+
+print("Final config logging section:", config.get('logging', 'STILL NOT FOUND'))
 
 with open('/data/config.yaml', 'w') as f:
     yaml.dump(config, f, default_flow_style=False)
 EOPATCH
 
     python3 /tmp/config_patch.py
+    
+    # Debug: Verify the final config
+    echo "Final config check:"
+    head -20 /data/config.yaml
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
