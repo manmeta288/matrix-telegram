@@ -33,21 +33,31 @@ hacky_network_config_migrator: true
 telegram:
     api_id: ${TELEGRAM_API_ID}
     api_hash: ${TELEGRAM_API_HASH}
-    
-network:
-    displayname_template: "{displayname} (TG)"
-    username_template: "telegram_{userid}"
 
 bridge:
+    username_template: "telegram_{userid}"
+    displayname_template: "{displayname} (TG)"
     permissions:
         "*": relay
         "${HOMESERVER_DOMAIN}": user
 
 logging:
-    min_level: info
-    writers:
-    - type: stdout
-      format: pretty-colored
+    version: 1
+    formatters:
+        precise:
+            format: "[%(levelname)-7s@%(name)s] %(message)s"
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: precise
+    loggers:
+        mau:
+            level: DEBUG
+        telethon:
+            level: INFO
+    root:
+        level: INFO
+        handlers: [console]
 EOF
 fi
 
