@@ -11,49 +11,24 @@ function fixperms {
 mkdir -p /data
 
 if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
-    echo "Creating Telegram bridge config from example..."
+    echo "Creating Telegram bridge config..."
     
-    # Copy the example config that ships with the package
+    # Copy example config
     cp /opt/mautrix-telegram/example-config.yaml /data/config.yaml
     
-    # Now patch it with our environment variables
-    cat > /tmp/config_patch.py << 'EOPATCH'
-import yaml
-import os
-
-with open('/data/config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
-
-# Update with our environment variables
-config['homeserver']['address'] = os.environ.get('HOMESERVER_ADDRESS', 'http://localhost:8008')
-config['homeserver']['domain'] = os.environ['HOMESERVER_DOMAIN']
-
-config['appservice']['address'] = os.environ.get('APPSERVICE_ADDRESS', 'http://localhost:29317')  
-config['appservice']['hostname'] = os.environ.get('APPSERVICE_HOSTNAME', '0.0.0.0')
-config['appservice']['port'] = int(os.environ.get('APPSERVICE_PORT', '29317'))
-config['appservice']['id'] = 'telegram'
-config['appservice']['bot_username'] = 'telegrambot'
-
-config['appservice']['database']['uri'] = os.environ['DATABASE_URL']
-
-config['telegram']['api_id'] = int(os.environ['TELEGRAM_API_ID'])
-config['telegram']['api_hash'] = os.environ['TELEGRAM_API_HASH']
-
-config['bridge']['username_template'] = 'telegram_{userid}'
-config['bridge']['displayname_template'] = '{displayname} (TG)'
-config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
-config['bridge']['permissions']['*'] = 'relay'
-
-# Logging already has correct structure in example config
-
-with open('/data/config.yaml', 'w') as f:
-    yaml.dump(config, f, default_flow_style=False)
+    # Patch config using sed (no Python dependencies needed)
+    sed -i "s|address: http://localhost:8008|address: ${HOMESERVER_ADDRESS:-http://localhost:8008}|g" /data/config.yaml
+    sed -i "s|domain: example.com|domain: ${HOMESERVER_DOMAIN}|g" /data/config.yaml
+    sed -i "s|address: http://localhost:29317|address: ${APPSERVICE_ADDRESS:-http://localhost:29317}|g" /data/config.yaml
+    sed -i "s|hostname: 0.0.0.0|hostname: ${APPSERVICE_HOSTNAME:-0.0.0.0}|g" /data/config.yaml
+    sed -i "s|port: 29317|port: ${APPSERVICE_PORT:-29317}|g" /data/config.yaml
+    sed -i "s|id: telegram|id: telegram|g" /data/config.yaml
+    sed -i "s|bot_username: telegrambot|bot_username: telegrambot|g" /data/config.yaml
+    sed -i "s|uri: postgres://username:password@hostname/db|uri: ${DATABASE_URL}|g" /data/config.yaml
+    sed -i "s|api_id: 12345|api_id: ${TELEGRAM_API_ID}|g" /data/config.yaml
+    sed -i "s|api_hash: tjyd5yge35lbodk1xwzw2jstp90k55qz|api_hash: ${TELEGRAM_API_HASH}|g" /data/config.yaml
     
-print("Config created successfully!")
-EOPATCH
-
-    python3 /tmp/config_patch.py
-    echo "Config patched successfully!"
+    echo "Config created successfully!"
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
