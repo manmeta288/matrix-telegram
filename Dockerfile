@@ -11,24 +11,18 @@ RUN apk add --no-cache \
       py3-commonmark \
       py3-phonenumbers \
       py3-mako \
-      #py3-prometheus-client \ (pulls in twisted unnecessarily)
-      # Indirect dependencies
       py3-idna \
       py3-rsa \
-      #py3-telethon \ (outdated)
         py3-pyaes \
         py3-aiodns \
         py3-python-socks \
-        # cryptg
           py3-cffi \
           py3-qrcode \
       py3-brotli \
-      # Other dependencies
       ffmpeg \
       ca-certificates \
       su-exec \
       netcat-openbsd \
-      # encryption
       py3-olm \
       py3-pycryptodome \
       py3-unpaddedbase64 \
@@ -49,10 +43,10 @@ RUN apk add --virtual .build-deps python3-dev libffi-dev build-base \
 
 COPY . /opt/mautrix-telegram
 RUN apk add git && pip3 install --break-system-packages --no-cache-dir .[all] && apk del git \
-  # This doesn't make the image smaller, but it's needed so that the `version` command works properly
   && cp mautrix_telegram/example-config.yaml . && rm -rf mautrix_telegram .git build
 
-VOLUME /data
+# VOLUME /data <- REMOVE THIS LINE
+
 ENV UID=1337 GID=1337 \
     FFMPEG_BINARY=/usr/bin/ffmpeg
 
