@@ -16,7 +16,7 @@ if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
     # First generate default config 
     python3 -m mautrix_telegram -g -c /data/config.yaml -e || exit $?
     
-    # Then modify the generated config with our settings
+    # Then modify the generated config with our settings AND fix logging
     cat > /tmp/config_patch.py << 'EOPATCH'
 import yaml
 import os
@@ -43,6 +43,9 @@ config['bridge']['username_template'] = 'telegram_{userid}'
 config['bridge']['displayname_template'] = '{displayname} (TG)'
 config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
 config['bridge']['permissions']['*'] = 'relay'
+
+# FIX THE LOGGING CONFIG - Add version field
+config['logging']['version'] = 1
 
 with open('/data/config.yaml', 'w') as f:
     yaml.dump(config, f, default_flow_style=False)
