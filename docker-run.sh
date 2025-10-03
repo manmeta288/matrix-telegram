@@ -10,21 +10,22 @@ function fixperms {
 
 mkdir -p /data
 
-# ALWAYS remove old config to regenerate with current env vars
+# Always regenerate config
 if [[ -f /data/config.yaml ]]; then
-    echo "Removing existing config to regenerate..."
+    echo "Removing existing config..."
     rm -f /data/config.yaml
 fi
 
-echo "Creating Telegram bridge config from example..."
+echo "Creating Telegram bridge config..."
 
 # Copy example config
 cp /opt/mautrix-telegram/example-config.yaml /data/config.yaml
 
-# Patch with environment variables using sed
+# Patch with environment variables - Fix database path
 sed -i "s|address: https://example.com|address: ${HOMESERVER_ADDRESS:-http://localhost:8008}|g" /data/config.yaml
 sed -i "s|domain: example.com|domain: ${HOMESERVER_DOMAIN}|g" /data/config.yaml  
-sed -i "s|uri: postgresql://username:password@hostname/db|uri: ${DATABASE_URL}|g" /data/config.yaml
+sed -i "s|type: sqlite|type: postgres|g" /data/config.yaml
+sed -i "s|uri: mautrix-telegram.db|uri: ${DATABASE_URL}|g" /data/config.yaml
 sed -i "s|api_id: 12345|api_id: ${TELEGRAM_API_ID}|g" /data/config.yaml
 sed -i "s|api_hash: tjyd5yge35lbodk1xwzw2jstp90k55qz|api_hash: ${TELEGRAM_API_HASH}|g" /data/config.yaml
 
