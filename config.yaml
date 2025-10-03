@@ -6,13 +6,9 @@ appservice:
     address: http://matrix-telegram-bridge:29317
     hostname: 0.0.0.0
     port: 29317
-    
+    database: ${DATABASE_URL}
     id: telegram
     bot_username: telegrambot
-
-    database:
-        type: postgres
-        uri: ${DATABASE_URL}
     
 telegram:
     api_id: ${TELEGRAM_API_ID}
