@@ -10,27 +10,27 @@ function fixperms {
 
 mkdir -p /data
 
-# Remove old config to regenerate
-if [[ -f /data/config.yaml ]]; then
-    echo "Removing old config..."
-    rm -f /data/config.yaml
-fi
-
 if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
-    echo "Generating Telegram bridge config from environment variables..."
+    echo "Generating Telegram bridge config..."
     
-    # Generate default config WITHOUT -e flag (not supported)
-    python3 -m mautrix_telegram -g -c /data/config.yaml || exit $?
+    # Generate config to a temp location first
+    python3 -m mautrix_telegram -g -c /tmp/config.yaml
     
-    # Then modify with our settings
+    if [[ ! -f /tmp/config.yaml ]]; then
+        echo "ERROR: Failed to generate config!"
+        exit 1
+    fi
+    
+    # Now patch and move to /data
     cat > /tmp/config_patch.py << 'EOPATCH'
 import yaml
 import os
+import shutil
 
-with open('/data/config.yaml', 'r') as f:
+with open('/tmp/config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
-# Update environment variables
+# Update with our environment variables
 config['homeserver']['address'] = os.environ.get('HOMESERVER_ADDRESS', 'http://localhost:8008')
 config['homeserver']['domain'] = os.environ['HOMESERVER_DOMAIN']
 
@@ -50,16 +50,24 @@ config['bridge']['displayname_template'] = '{displayname} (TG)'
 config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
 config['bridge']['permissions']['*'] = 'relay'
 
-# Ensure logging has version
+# Fix logging
 if 'logging' in config and 'version' not in config['logging']:
     config['logging']['version'] = 1
 
 with open('/data/config.yaml', 'w') as f:
     yaml.dump(config, f, default_flow_style=False)
+    
+print("Config generated and saved to /data/config.yaml")
 EOPATCH
 
     python3 /tmp/config_patch.py
-    echo "Config generated and patched successfully!"
+    
+    if [[ ! -f /data/config.yaml ]]; then
+        echo "ERROR: Failed to create /data/config.yaml!"
+        exit 1
+    fi
+    
+    echo "Config created successfully!"
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
