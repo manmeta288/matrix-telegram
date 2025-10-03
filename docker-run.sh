@@ -8,6 +8,9 @@ function fixperms {
     chown -R $UID:$GID /data
 }
 
+# CRITICAL: Change to /opt/mautrix-telegram directory where example-config.yaml lives
+cd /opt/mautrix-telegram
+
 mkdir -p /data
 
 # Always regenerate config
@@ -18,26 +21,16 @@ fi
 
 echo "Creating Telegram bridge config..."
 
-# Copy example config
-cp /opt/mautrix-telegram/example-config.yaml /data/config.yaml
+# Copy example config (we're in /opt/mautrix-telegram now, so relative path works)
+cp example-config.yaml /data/config.yaml
 
-# Debug: Show what database section looks like before sed
-echo "DEBUG: Database section before sed:"
-grep -A 3 "^appservice:" /data/config.yaml | grep -A 2 "database:"
-
-# Patch with correct patterns for mautrix-telegram
+# Now patch with sed using correct patterns from actual example config
 sed -i 's|address: https://matrix.example.com|address: '"${HOMESERVER_ADDRESS:-http://localhost:8008}"'|g' /data/config.yaml
 sed -i 's|domain: example.com|domain: '"${HOMESERVER_DOMAIN}"'|g' /data/config.yaml  
-
-# Fix database config - mautrix-telegram uses different structure
-sed -i '/^appservice:/,/^[^ ]/ s|type: sqlite|type: postgres|' /data/config.yaml
-sed -i '/^appservice:/,/^[^ ]/ s|uri: .*\.db|uri: '"${DATABASE_URL}"'|' /data/config.yaml
-
+sed -i 's|type: sqlite|type: postgres|g' /data/config.yaml
+sed -i 's|uri: mautrix-telegram.db|uri: '"${DATABASE_URL}"'|g' /data/config.yaml
 sed -i 's|api_id: 12345|api_id: '"${TELEGRAM_API_ID}"'|g' /data/config.yaml
-sed -i 's|api_hash: .*|api_hash: '"${TELEGRAM_API_HASH}"'|g' /data/config.yaml
-
-echo "DEBUG: Database section after sed:"
-grep -A 3 "^appservice:" /data/config.yaml | grep -A 2 "database:"
+sed -i 's|api_hash: tjyd5yge35lbodk1xwzw2jstp90k55qz|api_hash: '"${TELEGRAM_API_HASH}"'|g' /data/config.yaml
 
 echo "Config created successfully!"
 
