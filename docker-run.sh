@@ -1,50 +1,66 @@
 #!/bin/sh
-if [ ! -z "$MAUTRIX_DIRECT_STARTUP" ]; then
-	if [ $(id -u) == 0 ]; then
-		echo "|------------------------------------------|"
-		echo "| Warning: running bridge unsafely as root |"
-		echo "|------------------------------------------|"
-	fi
-	exec python3 -m mautrix_telegram -c /data/config.yaml
-elif [ $(id -u) != 0 ]; then
-	echo "The startup script must run as root. It will use su-exec to drop permissions before running the bridge."
-	echo "To bypass the startup script, either set the `MAUTRIX_DIRECT_STARTUP` environment variable,"
-	echo "or just use `python3 -m mautrix_telegram -c /data/config.yaml` as the run command."
-	echo "Note that the config and registration will not be auto-generated when bypassing the startup script."
-	exit 1
+
+if [[ -z "$GID" ]]; then
+    GID="$UID"
 fi
 
-# Define functions.
 function fixperms {
-	chown -R $UID:$GID /data
-
-	# /opt/mautrix-telegram is read-only, so disable file logging if it's pointing there.
-	if [[ "$(yq e '.logging.handlers.file.filename' /data/config.yaml)" == "./mautrix-telegram.log" ]]; then
-		yq -I4 e -i 'del(.logging.root.handlers[] | select(. == "file"))' /data/config.yaml
-		yq -I4 e -i 'del(.logging.handlers.file)' /data/config.yaml
-	fi
+    chown -R $UID:$GID /data
 }
 
-cd /opt/mautrix-telegram
+mkdir -p /data
 
-if [ ! -f /data/config.yaml ]; then
-	cp example-config.yaml /data/config.yaml
-	echo "Didn't find a config file."
-	echo "Copied default config file to /data/config.yaml"
-	echo "Modify that config file to your liking."
-	echo "Start the container again after that to generate the registration file."
-	fixperms
-	exit
+if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
+    echo "Generating Telegram bridge config from environment variables..."
+    cat > /data/config.yaml << EOF
+homeserver:
+    address: ${HOMESERVER_ADDRESS:-http://localhost:8008}
+    domain: ${HOMESERVER_DOMAIN}
+
+appservice:
+    address: ${APPSERVICE_ADDRESS:-http://localhost:29317}
+    hostname: ${APPSERVICE_HOSTNAME:-0.0.0.0}
+    port: ${APPSERVICE_PORT:-29317}
+    id: telegram
+    bot_username: telegrambot
+
+database:
+    type: postgres
+    uri: ${DATABASE_URL}
+
+hacky_network_config_migrator: true
+
+telegram:
+    api_id: ${TELEGRAM_API_ID}
+    api_hash: ${TELEGRAM_API_HASH}
+    
+network:
+    displayname_template: "{displayname} (TG)"
+    username_template: "telegram_{userid}"
+
+bridge:
+    permissions:
+        "*": relay
+        "${HOMESERVER_DOMAIN}": user
+
+logging:
+    min_level: info
+    writers:
+    - type: stdout
+      format: pretty-colored
+EOF
 fi
 
-if [ ! -f /data/registration.yaml ]; then
-	python3 -m mautrix_telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
-	echo "Didn't find a registration file."
-	echo "Generated one for you."
-	echo "See https://docs.mau.fi/bridges/general/registering-appservices.html on how to use it."
-	fixperms
-	exit
+if [[ ! -f /data/config.yaml ]]; then
+    /usr/bin/mautrix-telegram -c /data/config.yaml -e
+    exit
 fi
 
+if [[ ! -f /data/registration.yaml ]]; then
+    /usr/bin/mautrix-telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
+    exit
+fi
+
+cd /data
 fixperms
-exec su-exec $UID:$GID python3 -m mautrix_telegram -c /data/config.yaml
+exec su-exec $UID:$GID /usr/bin/mautrix-telegram
