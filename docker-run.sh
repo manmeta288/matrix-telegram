@@ -11,23 +11,17 @@ function fixperms {
 mkdir -p /data
 
 if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
-    echo "Generating Telegram bridge config..."
+    echo "Creating Telegram bridge config from example..."
     
-    # Generate config to a temp location first
-    python3 -m mautrix_telegram -g -c /tmp/config.yaml
+    # Copy the example config that ships with the package
+    cp /opt/mautrix-telegram/example-config.yaml /data/config.yaml
     
-    if [[ ! -f /tmp/config.yaml ]]; then
-        echo "ERROR: Failed to generate config!"
-        exit 1
-    fi
-    
-    # Now patch and move to /data
+    # Now patch it with our environment variables
     cat > /tmp/config_patch.py << 'EOPATCH'
 import yaml
 import os
-import shutil
 
-with open('/tmp/config.yaml', 'r') as f:
+with open('/data/config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Update with our environment variables
@@ -50,24 +44,16 @@ config['bridge']['displayname_template'] = '{displayname} (TG)'
 config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
 config['bridge']['permissions']['*'] = 'relay'
 
-# Fix logging
-if 'logging' in config and 'version' not in config['logging']:
-    config['logging']['version'] = 1
+# Logging already has correct structure in example config
 
 with open('/data/config.yaml', 'w') as f:
     yaml.dump(config, f, default_flow_style=False)
     
-print("Config generated and saved to /data/config.yaml")
+print("Config created successfully!")
 EOPATCH
 
     python3 /tmp/config_patch.py
-    
-    if [[ ! -f /data/config.yaml ]]; then
-        echo "ERROR: Failed to create /data/config.yaml!"
-        exit 1
-    fi
-    
-    echo "Config created successfully!"
+    echo "Config patched successfully!"
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
