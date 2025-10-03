@@ -1,22 +1,30 @@
 homeserver:
-    address: ${HOMESERVER_ADDRESS}
-    domain: ${HOMESERVER_DOMAIN}
+  address: ${HOMESERVER_ADDRESS}
+  domain: ${HOMESERVER_DOMAIN}
 
 appservice:
-    address: http://matrix-telegram-bridge:29317
-    hostname: 0.0.0.0
-    port: 29317
-    database: ${DATABASE_URL}
-    id: telegram
-    bot_username: telegrambot
-    
+  address: http://matrix-telegram-bridge:29317
+  hostname: 0.0.0.0
+  port: 29317
+  database: ${DATABASE_URL}
+  id: telegram
+  bot_username: telegrambot
+
 telegram:
-    api_id: ${TELEGRAM_API_ID}
-    api_hash: ${TELEGRAM_API_HASH}
+  api_id: ${TELEGRAM_API_ID}
+  api_hash: ${TELEGRAM_API_HASH}
 
 logging:
-    handlers:
-        file:
-            filename: /data/mautrix-telegram.log
-    root:
-        level: DEBUG
+  version: 1
+  formatters:
+    simple:
+      format: "%(asctime)s %(levelname)s %(name)s: %(message)s"
+  handlers:
+    file:
+      class: logging.FileHandler
+      level: DEBUG
+      formatter: simple
+      filename: /data/mautrix-telegram.log
+  root:
+    level: DEBUG
+    handlers: ["file"]
