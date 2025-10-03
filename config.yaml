@@ -1,0 +1,26 @@
+homeserver:
+    address: ${HOMESERVER_ADDRESS}
+    domain: ${HOMESERVER_DOMAIN}
+
+appservice:
+    address: http://matrix-telegram-bridge:29317
+    hostname: 0.0.0.0
+    port: 29317
+    
+    database:
+        type: postgres
+        uri: ${DATABASE_URL}
+    
+    id: telegram
+    bot_username: telegrambot
+    
+telegram:
+    api_id: ${TELEGRAM_API_ID}
+    api_hash: ${TELEGRAM_API_HASH}
+
+logging:
+    handlers:
+        file:
+            filename: /data/mautrix-telegram.log
+    root:
+        level: DEBUG
