@@ -28,8 +28,6 @@ database:
     type: postgres
     uri: ${DATABASE_URL}
 
-hacky_network_config_migrator: true
-
 telegram:
     api_id: ${TELEGRAM_API_ID}
     api_hash: ${TELEGRAM_API_HASH}
@@ -42,22 +40,10 @@ bridge:
         "${HOMESERVER_DOMAIN}": user
 
 logging:
-    version: 1
-    formatters:
-        precise:
-            format: "[%(levelname)-7s@%(name)s] %(message)s"
-    handlers:
-        console:
-            class: logging.StreamHandler
-            formatter: precise
-    loggers:
-        mau:
-            level: DEBUG
-        telethon:
-            level: INFO
-    root:
-        level: INFO
-        handlers: [console]
+    min_level: info
+    writers:
+    - type: stdout
+      format: pretty-colored
 EOF
 fi
 
