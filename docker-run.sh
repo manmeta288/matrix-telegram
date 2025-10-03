@@ -22,7 +22,7 @@ cp example-config.yaml /data/config.yaml
 
 echo "Patching config with yq..."
 
-# Use yq to properly modify YAML (like original script does for logging)
+# Use yq to properly modify YAML
 yq -i ".homeserver.address = \"${HOMESERVER_ADDRESS}\"" /data/config.yaml
 yq -i ".homeserver.domain = \"${HOMESERVER_DOMAIN}\"" /data/config.yaml
 yq -i ".appservice.database.type = \"postgres\"" /data/config.yaml
@@ -30,9 +30,12 @@ yq -i ".appservice.database.uri = \"${DATABASE_URL}\"" /data/config.yaml
 yq -i ".telegram.api_id = ${TELEGRAM_API_ID}" /data/config.yaml
 yq -i ".telegram.api_hash = \"${TELEGRAM_API_HASH}\"" /data/config.yaml
 
+# FIX LOGGING: Change log file path from /opt/mautrix-telegram (read-only) to /data (writable)
+yq -i ".logging.handlers.file.filename = \"/data/mautrix-telegram.log\"" /data/config.yaml
+
 echo "Config patched successfully!"
 
-if [[! -f /data/registration.yaml ]]; then
+if [[ ! -f /data/registration.yaml ]]; then
     python3 -m mautrix_telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
     echo "Registration generated!"
     exit
