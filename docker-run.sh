@@ -12,44 +12,43 @@ mkdir -p /data
 
 if [[ ! -f /data/config.yaml ]] && [[ -n "$HOMESERVER_DOMAIN" ]]; then
     echo "Generating Telegram bridge config from environment variables..."
-    cat > /data/config.yaml << EOF
-homeserver:
-    address: ${HOMESERVER_ADDRESS:-http://localhost:8008}
-    domain: ${HOMESERVER_DOMAIN}
+    
+    # First generate default config 
+    python3 -m mautrix_telegram -g -c /data/config.yaml -e || exit $?
+    
+    # Then modify the generated config with our settings
+    cat > /tmp/config_patch.py << 'EOPATCH'
+import yaml
+import os
 
-appservice:
-    address: ${APPSERVICE_ADDRESS:-http://localhost:29317}
-    hostname: ${APPSERVICE_HOSTNAME:-0.0.0.0}
-    port: ${APPSERVICE_PORT:-29317}
-    id: telegram
-    bot_username: telegrambot
+with open('/data/config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
 
-database:
-    type: postgres
-    uri: ${DATABASE_URL}
+# Update with our environment variables
+config['homeserver']['address'] = os.environ.get('HOMESERVER_ADDRESS', 'http://localhost:8008')
+config['homeserver']['domain'] = os.environ['HOMESERVER_DOMAIN']
 
-telegram:
-    api_id: ${TELEGRAM_API_ID}
-    api_hash: ${TELEGRAM_API_HASH}
+config['appservice']['address'] = os.environ.get('APPSERVICE_ADDRESS', 'http://localhost:29317')  
+config['appservice']['hostname'] = os.environ.get('APPSERVICE_HOSTNAME', '0.0.0.0')
+config['appservice']['port'] = int(os.environ.get('APPSERVICE_PORT', '29317'))
+config['appservice']['id'] = 'telegram'
+config['appservice']['bot_username'] = 'telegrambot'
 
-bridge:
-    username_template: "telegram_{userid}"
-    displayname_template: "{displayname} (TG)"
-    permissions:
-        "*": relay
-        "${HOMESERVER_DOMAIN}": user
+config['appservice']['database']['uri'] = os.environ['DATABASE_URL']
 
-logging:
-    min_level: info
-    writers:
-    - type: stdout
-      format: pretty-colored
-EOF
-fi
+config['telegram']['api_id'] = int(os.environ['TELEGRAM_API_ID'])
+config['telegram']['api_hash'] = os.environ['TELEGRAM_API_HASH']
 
-if [[ ! -f /data/config.yaml ]]; then
-    python3 -m mautrix_telegram -c /data/config.yaml -e
-    exit
+config['bridge']['username_template'] = 'telegram_{userid}'
+config['bridge']['displayname_template'] = '{displayname} (TG)'
+config['bridge']['permissions'][os.environ['HOMESERVER_DOMAIN']] = 'user'
+config['bridge']['permissions']['*'] = 'relay'
+
+with open('/data/config.yaml', 'w') as f:
+    yaml.dump(config, f, default_flow_style=False)
+EOPATCH
+
+    python3 /tmp/config_patch.py
 fi
 
 if [[ ! -f /data/registration.yaml ]]; then
