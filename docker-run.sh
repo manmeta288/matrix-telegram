@@ -3,13 +3,11 @@
 cd /opt/mautrix-telegram
 mkdir -p /data
 
-# Use our pre-made config template with envsubst
-if [[ ! -f /data/config.yaml ]]; then
-    echo "Creating config from template..."
-    envsubst < /telegram/config.yaml > /data/config.yaml
-fi
+# Always regenerate config from template with current environment variables
+echo "Generating config from template..."
+envsubst < /telegram/config.yaml > /data/config.yaml
 
-if [[ ! -f /data/registration.yaml ]]; then
+if [ ! -f /data/registration.yaml ]; then
     python3 -m mautrix_telegram -g -c /data/config.yaml -r /data/registration.yaml || exit $?
     echo "Registration generated!"
     exit
