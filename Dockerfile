@@ -30,7 +30,8 @@ RUN apk add --no-cache \
       bash \
       curl \
       jq \
-      yq
+      yq \
+      gettext
 
 COPY requirements.txt /opt/mautrix-telegram/requirements.txt
 COPY optional-requirements.txt /opt/mautrix-telegram/optional-requirements.txt
@@ -45,7 +46,11 @@ COPY . /opt/mautrix-telegram
 RUN apk add git && pip3 install --break-system-packages --no-cache-dir .[all] && apk del git \
   && cp mautrix_telegram/example-config.yaml . && rm -rf mautrix_telegram .git build
 
-# VOLUME /data <- REMOVE THIS LINE
+# Copy the config template to where docker-run.sh expects it
+COPY config.yaml /telegram/config.yaml
+
+# Ensure docker-run.sh is executable
+RUN chmod +x /opt/mautrix-telegram/docker-run.sh
 
 ENV UID=1337 GID=1337 \
     FFMPEG_BINARY=/usr/bin/ffmpeg
