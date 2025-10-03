@@ -42,12 +42,12 @@ RUN apk add --virtual .build-deps python3-dev libffi-dev build-base \
  && apk del .build-deps \
  && rm -f /cryptg-*.whl
 
+# Copy config template BEFORE copying main source to prevent overwriting
+COPY config.yaml /telegram/config.yaml
+
 COPY . /opt/mautrix-telegram
 RUN apk add git && pip3 install --break-system-packages --no-cache-dir .[all] && apk del git \
   && cp mautrix_telegram/example-config.yaml . && rm -rf mautrix_telegram .git build
-
-# Copy the config template to where docker-run.sh expects it
-COPY config.yaml /telegram/config.yaml
 
 # Ensure docker-run.sh is executable
 RUN chmod +x /opt/mautrix-telegram/docker-run.sh
