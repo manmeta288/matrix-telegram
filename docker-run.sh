@@ -62,18 +62,14 @@ function apply_config_settings {
 	yq -I4 e -i ".bridge.backfill.incremental.messages_per_batch = 100" /data/config.yaml
 	
 	# Double Puppeting
-	yq -I4 e -i ".bridge.double_puppet_server_map.\"$HOMESERVER_DOMAIN\" = \"$HOMESERVER_ADDRESS\"" /data/config.yaml
+	yq -I4 e -i ".bridge.double_puppet_server_map = {\"$HOMESERVER_DOMAIN\": \"$HOMESERVER_ADDRESS\"}" /data/config.yaml
 	yq -I4 e -i ".bridge.double_puppet_allow_discovery = true" /data/config.yaml
-	yq -I4 e -i ".bridge.login_shared_secret_map.\"$HOMESERVER_DOMAIN\" = null" /data/config.yaml
+	yq -I4 e -i ".bridge.login_shared_secret_map = {\"$HOMESERVER_DOMAIN\": null}" /data/config.yaml
 	yq -I4 e -i ".bridge.sync_with_custom_puppets = false" /data/config.yaml
 	
-	# Personal Filtering Spaces (not in Telegram bridge config, but similar features)
+	# Features
 	yq -I4 e -i ".bridge.sync_direct_chat_list = false" /data/config.yaml
-	
-	# Delivery Receipts
 	yq -I4 e -i ".bridge.delivery_receipts = true" /data/config.yaml
-	
-	# Avatar
 	yq -I4 e -i ".bridge.allow_avatar_remove = true" /data/config.yaml
 	yq -I4 e -i ".bridge.private_chat_portal_meta = \"default\"" /data/config.yaml
 	
@@ -81,9 +77,8 @@ function apply_config_settings {
 	yq -I4 e -i ".bridge.relaybot.authless_portals = true" /data/config.yaml
 	yq -I4 e -i ".bridge.relaybot.ignore_unbridged_group_chat = true" /data/config.yaml
 	
-	# Permissions
-	yq -I4 e -i ".bridge.permissions.\"*\" = \"relaybot\"" /data/config.yaml
-	yq -I4 e -i ".bridge.permissions.\"$HOMESERVER_DOMAIN\" = \"full\"" /data/config.yaml
+	# Permissions - FIXED: Use proper dictionary syntax
+	yq -I4 e -i ".bridge.permissions = {\"*\": \"relaybot\", \"$HOMESERVER_DOMAIN\": \"full\"}" /data/config.yaml
 	if [[ -n "$ADMIN_USER" ]]; then
 		yq -I4 e -i ".bridge.permissions.\"$ADMIN_USER\" = \"admin\"" /data/config.yaml
 	fi
