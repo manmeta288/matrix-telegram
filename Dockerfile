@@ -35,16 +35,20 @@ RUN apk add --no-cache \
 COPY requirements.txt /opt/mautrix-telegram/requirements.txt
 COPY optional-requirements.txt /opt/mautrix-telegram/optional-requirements.txt
 WORKDIR /opt/mautrix-telegram
-RUN apk add --virtual .build-deps python3-dev libffi-dev build-base \
+
+# Add Rust to build dependencies for cryptg
+RUN apk add --virtual .build-deps \
+      python3-dev \
+      libffi-dev \
+      build-base \
+      cargo \
+      rust \
  && pip3 install --break-system-packages -r requirements.txt -r optional-requirements.txt \
  && apk del .build-deps
 
 COPY . /opt/mautrix-telegram
 RUN apk add git && pip3 install --break-system-packages --no-cache-dir .[all] && apk del git \
   && cp mautrix_telegram/example-config.yaml . && rm -rf mautrix_telegram .git build
-
-# REMOVED: VOLUME /data
-# Railway handles volumes externally
 
 ENV UID=1337 GID=1337 \
     FFMPEG_BINARY=/usr/bin/ffmpeg
