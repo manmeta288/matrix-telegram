@@ -64,7 +64,6 @@ function apply_config_settings {
 	# Double Puppeting
 	yq -I4 e -i ".bridge.double_puppet_server_map = {\"$HOMESERVER_DOMAIN\": \"$HOMESERVER_ADDRESS\"}" /data/config.yaml
 	yq -I4 e -i ".bridge.double_puppet_allow_discovery = true" /data/config.yaml
-	yq -I4 e -i ".bridge.login_shared_secret_map = {\"$HOMESERVER_DOMAIN\": null}" /data/config.yaml
 	yq -I4 e -i ".bridge.sync_with_custom_puppets = false" /data/config.yaml
 	
 	# Features
