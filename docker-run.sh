@@ -56,10 +56,10 @@ function apply_config_settings {
 	
 	# Backfilling
 	yq -I4 e -i ".bridge.backfill.enable = true" /data/config.yaml
-	yq -I4 e -i ".bridge.backfill.forward_limits.initial.user = 100" /data/config.yaml
-	yq -I4 e -i ".bridge.backfill.forward_limits.initial.channel = 100" /data/config.yaml
+	yq -I4 e -i ".bridge.backfill.forward_limits.initial.user = 1000" /data/config.yaml
+	yq -I4 e -i ".bridge.backfill.forward_limits.initial.channel = 500" /data/config.yaml
 	yq -I4 e -i ".bridge.backfill.forward_limits.initial.supergroup = 100" /data/config.yaml
-	yq -I4 e -i ".bridge.backfill.incremental.messages_per_batch = 100" /data/config.yaml
+	yq -I4 e -i ".bridge.backfill.incremental.messages_per_batch = 1000" /data/config.yaml
 	
 	# Double Puppeting
 	yq -I4 e -i ".bridge.double_puppet_server_map = {\"$HOMESERVER_DOMAIN\": \"$HOMESERVER_ADDRESS\"}" /data/config.yaml
