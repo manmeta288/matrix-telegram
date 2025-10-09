@@ -11,24 +11,18 @@ RUN apk add --no-cache \
       py3-commonmark \
       py3-phonenumbers \
       py3-mako \
-      #py3-prometheus-client \ (pulls in twisted unnecessarily)
-      # Indirect dependencies
       py3-idna \
       py3-rsa \
-      #py3-telethon \ (outdated)
         py3-pyaes \
         py3-aiodns \
         py3-python-socks \
-        # cryptg
           py3-cffi \
           py3-qrcode \
       py3-brotli \
-      # Other dependencies
       ffmpeg \
       ca-certificates \
       su-exec \
       netcat-openbsd \
-      # encryption
       py3-olm \
       py3-pycryptodome \
       py3-unpaddedbase64 \
@@ -42,18 +36,22 @@ COPY requirements.txt /opt/mautrix-telegram/requirements.txt
 COPY optional-requirements.txt /opt/mautrix-telegram/optional-requirements.txt
 WORKDIR /opt/mautrix-telegram
 RUN apk add --virtual .build-deps python3-dev libffi-dev build-base \
- && pip3 install --break-system-packages /cryptg-*.whl \
- && pip3 install --break-system-packages --no-cache-dir -r requirements.txt -r optional-requirements.txt \
- && apk del .build-deps \
- && rm -f /cryptg-*.whl
+ && pip3 install --break-system-packages -r requirements.txt -r optional-requirements.txt \
+ && apk del .build-deps
 
 COPY . /opt/mautrix-telegram
 RUN apk add git && pip3 install --break-system-packages --no-cache-dir .[all] && apk del git \
-  # This doesn't make the image smaller, but it's needed so that the `version` command works properly
   && cp mautrix_telegram/example-config.yaml . && rm -rf mautrix_telegram .git build
 
-VOLUME /data
+# REMOVED: VOLUME /data
+# Railway handles volumes externally
+
 ENV UID=1337 GID=1337 \
     FFMPEG_BINARY=/usr/bin/ffmpeg
+
+COPY docker-run.sh /opt/mautrix-telegram/docker-run.sh
+RUN chmod +x /opt/mautrix-telegram/docker-run.sh
+
+WORKDIR /data
 
 CMD ["/opt/mautrix-telegram/docker-run.sh"]
