@@ -37,7 +37,8 @@ function apply_config_settings {
 	fi
 	yq -I4 e -i ".appservice.hostname = \"${APPSERVICE_HOSTNAME:-0.0.0.0}\"" /data/config.yaml
 	yq -I4 e -i ".appservice.port = ${APPSERVICE_PORT:-29317}" /data/config.yaml
-	yq -I4 e -i ".appservice.ping_interval_seconds = 0" /data/config.yaml
+	yq -I4 e -i 'del(.appservice.ping_interval_seconds)' /data/config.yaml
+	yq -I4 e -i '.appservice.ping_interval = null' /data/config.yaml
 
 	# Database
 	yq -I4 e -i ".appservice.database = \"$DATABASE_URL\"" /data/config.yaml
